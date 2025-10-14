@@ -1,0 +1,32 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
+    <!-- NuGet Package Metadata -->
+    <PackageId>Sieve.TypeSafeQueryBuilder</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>alex</Authors>
+    <Company>alex</Company>
+    <Description>Type-safe query builder for Sieve with round-trip parsing support. Build, parse, and inspect Sieve filters, sorts, and pagination with compile-time safety.</Description>
+    <PackageTags>sieve;query-builder;filtering;sorting;pagination;type-safe;aspnetcore</PackageTags>
+    <PackageProjectUrl>https://github.com/uldahlalex/sieve-query-builder</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/uldahlalex/sieve-query-builder</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="../../README.md" Pack="true" PackagePath="/" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Sieve" Version="*" />
+  </ItemGroup>
+
+</Project>
