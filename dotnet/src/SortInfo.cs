@@ -1,4 +1,4 @@
-namespace src;
+namespace SieveQueryBuilder;
 
 /// <summary>
 /// Represents a parsed sort with its property name and direction

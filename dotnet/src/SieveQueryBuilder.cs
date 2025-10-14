@@ -4,7 +4,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using Sieve.Models;
 
-namespace src;
+namespace SieveQueryBuilder;
 
 /// <summary>
 /// Type-safe builder for constructing Sieve query strings

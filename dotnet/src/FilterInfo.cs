@@ -1,4 +1,4 @@
-namespace src;
+namespace SieveQueryBuilder;
 
 /// <summary>
 /// Represents a parsed filter with its property name, operator, and value

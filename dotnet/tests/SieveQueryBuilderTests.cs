@@ -1,4 +1,4 @@
-using src;
+using SieveQueryBuilder;
 using tests.Entities;
 
 namespace tests;
