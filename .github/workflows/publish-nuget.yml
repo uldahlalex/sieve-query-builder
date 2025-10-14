@@ -2,11 +2,6 @@ name: Publish to NuGet
 
 on:
   workflow_dispatch:
-    inputs:
-      version:
-        description: 'Package version (e.g., 1.0.0)'
-        required: true
-        type: string
 
 jobs:
   publish:
@@ -30,9 +25,12 @@ jobs:
     - name: Run tests
       run: dotnet test ./dotnet/tests/tests.csproj --configuration Release --no-build --verbosity normal
 
-    - name: Update version in csproj
+    - name: Extract version from csproj
+      id: get_version
       run: |
-        sed -i "s/<Version>.*<\/Version>/<Version>${{ github.event.inputs.version }}<\/Version>/" ./dotnet/src/src.csproj
+        VERSION=$(grep -oP '<Version>\K[^<]+' ./dotnet/src/src.csproj)
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "Publishing version: $VERSION"
 
     - name: Pack NuGet package
       run: dotnet pack ./dotnet/src/src.csproj --configuration Release --no-build --output ./nupkg
@@ -46,5 +44,5 @@ jobs:
       run: |
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
-        git tag -a "v${{ github.event.inputs.version }}" -m "Release v${{ github.event.inputs.version }}"
-        git push origin "v${{ github.event.inputs.version }}"
+        git tag -a "v${{ steps.get_version.outputs.version }}" -m "Release v${{ steps.get_version.outputs.version }}"
+        git push origin "v${{ steps.get_version.outputs.version }}"
