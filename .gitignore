@@ -6,6 +6,7 @@
 # dotenv files
 .env
 RESEARCH_REPORT.md
+letter.txt
 
 # User-specific files
 *.rsuser

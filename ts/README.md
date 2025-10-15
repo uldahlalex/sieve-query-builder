@@ -42,26 +42,6 @@ const sieveModel = SieveQueryBuilder.create<Author>()
 // Result: { filters: "name@=Bob", sorts: "name", pageSize: 10 }
 ```
 
-### With NSwag Generated Client
-
-```typescript
-import { Author, LibraryClient } from './generated-client';
-import { SieveQueryBuilder } from 'ts-sieve-query-builder';
-
-const client = new LibraryClient();
-
-// Build query using generated Author type
-const queryParams = SieveQueryBuilder.create<Author>()
-  .filterContains('name', 'Bob')
-  .filterNotEquals('name', 'Bob_0')
-  .sortByDescending('createdat')
-  .page(1)
-  .pageSize(20)
-  .buildQueryParams();
-
-// Use with your API client
-const authors = await fetch('/api/Library/GetAuthors?' + new URLSearchParams(queryParams));
-```
 
 ### Filtering Operations
 
@@ -117,6 +97,8 @@ const query = SieveQueryBuilder.create<Author>()
 ### Custom Mapped Properties
 
 For properties mapped in your C# `ApplicationSieveProcessor`:
+
+This feature intentionally bypasses type-safety.
 
 ```typescript
 // C# Sieve Processor maps a.Books.Count to "BooksCount"
@@ -214,6 +196,7 @@ const filtersString = builder.buildFiltersString();
 const sortsString = builder.buildSortsString();
 // "-createdat,name"
 ```
+
 
 ## Testing
 
