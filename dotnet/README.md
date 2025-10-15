@@ -24,7 +24,6 @@ A type-safe query builder for [Sieve](https://github.com/Biarity/Sieve) with rou
     * [Using Query Models](#using-query-models)
     * [Benefits](#benefits)
     * [Comparison](#comparison)
-    * [Generating Query Models](#generating-query-models)
     * [Using Query Models in ASP.NET Controllers (NSwag/OpenAPI)](#using-query-models-in-aspnet-controllers-nswagopenapi)
   * [Round-Trip Parsing](#round-trip-parsing)
     * [Parse Query Strings](#parse-query-strings)
@@ -142,93 +141,6 @@ var query = SieveQueryBuilder<AuthorQueryModel>.Create()
     .FilterContains(a => a.Name, "Bob")
     .FilterGreaterThanOrEqual(a => a.BooksCount, 5)  // IntelliSense works!
     .BuildQueryString();
-```
-
-### Generating Query Models
-
-To avoid maintaining query models and SieveProcessor configuration separately, use `SieveQueryModelBuilder<T>` as a **single source of truth**:
-
-```csharp
-// 1. Define your configuration once
-var builder = new SieveQueryModelBuilder<Author>()
-    .AddProperty<string>("Id")
-    .AddProperty<string>("Name")
-    .AddProperty<DateTime>("Createdat")
-    .AddProperty<int>("BooksCount");  // Custom mapped property
-
-// 2. Generate query model code
-var queryModelCode = builder.GenerateQueryModelCode();
-Console.WriteLine(queryModelCode);
-```
-
-**Output:**
-```csharp
-using SieveQueryBuilder;
-
-/// <summary>
-/// Query model for Author with configured filterable and sortable properties
-/// </summary>
-public class AuthorQueryModel : ISieveQueryModel
-{
-    /// <summary>
-    /// Can Filter, Sort
-    /// </summary>
-    public int? BooksCount { get; set; }
-
-    /// <summary>
-    /// Can Filter, Sort
-    /// </summary>
-    public DateTime? Createdat { get; set; }
-
-    /// <summary>
-    /// Can Filter, Sort
-    /// </summary>
-    public string? Id { get; set; }
-
-    /// <summary>
-    /// Can Filter, Sort
-    /// </summary>
-    public string? Name { get; set; }
-}
-```
-
-**3. Generate SieveProcessor configuration code:**
-```csharp
-var processorCode = builder.GenerateSieveProcessorCode();
-Console.WriteLine(processorCode);
-```
-
-**Output:**
-```csharp
-// Configure Author entity
-mapper.Property<Author>(e => e.BooksCount)
-    .CanFilter()
-    .CanSort()
-    ;
-
-mapper.Property<Author>(e => e.Createdat)
-    .CanFilter()
-    .CanSort()
-    ;
-
-mapper.Property<Author>(e => e.Id)
-    .CanFilter()
-    .CanSort()
-    ;
-
-mapper.Property<Author>(e => e.Name)
-    .CanFilter()
-    .CanSort()
-    ;
-```
-
-**Customizing capabilities:**
-```csharp
-// Filter-only property
-builder.AddProperty<string>("Email", canSort: false);
-
-// Sort-only property
-builder.AddProperty<DateTime>("LastModified", canFilter: false);
 ```
 
 ### Using Query Models in ASP.NET Controllers (NSwag/OpenAPI)

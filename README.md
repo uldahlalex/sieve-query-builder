@@ -96,18 +96,6 @@ var query = SieveQueryBuilder<AuthorQueryModel>.Create()
     .BuildQueryString();
 ```
 
-**Generate Query Models** from a single source of truth:
-```csharp
-// Define configuration once
-var builder = new SieveQueryModelBuilder<Author>()
-    .AddProperty<string>("Name")
-    .AddProperty<int>("BooksCount");
-
-// Generate both query model code AND SieveProcessor configuration
-var queryModelCode = builder.GenerateQueryModelCode();     // C# class code
-var processorCode = builder.GenerateSieveProcessorCode();  // mapper.Property<Author>(...) code
-```
-
 **Round-trip parsing** - parse and modify queries:
 ```csharp
 // Parse incoming queries
