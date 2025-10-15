@@ -6,11 +6,11 @@ namespace tests;
 /// <summary>
 /// Tests for type-safe query models that enforce Sieve processor configuration
 /// </summary>
-public class SieveQueryModelTests
+public class SieveQueryBuilderWithCustomQueryModelsTests
 {
     private readonly ITestOutputHelper _outputHelper;
 
-    public SieveQueryModelTests(ITestOutputHelper outputHelper)
+    public SieveQueryBuilderWithCustomQueryModelsTests(ITestOutputHelper outputHelper)
     {
         _outputHelper = outputHelper;
     }

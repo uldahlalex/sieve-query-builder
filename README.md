@@ -80,7 +80,7 @@ var queryString = SieveQueryBuilder<Author>.Create()
     .BuildQueryString();
 ```
 
-**Query Models** for custom mapped properties (new!):
+**Query Models** for custom mapped properties:
 ```csharp
 // Define a query model matching your SieveProcessor configuration
 public class AuthorQueryModel : ISieveQueryModel
@@ -94,6 +94,18 @@ var query = SieveQueryBuilder<AuthorQueryModel>.Create()
     .FilterContains(a => a.Name, "Bob")
     .FilterGreaterThanOrEqual(a => a.BooksCount, 5)  // Type-safe custom property!
     .BuildQueryString();
+```
+
+**Generate Query Models** from a single source of truth:
+```csharp
+// Define configuration once
+var builder = new SieveQueryModelBuilder<Author>()
+    .AddProperty<string>("Name")
+    .AddProperty<int>("BooksCount");
+
+// Generate both query model code AND SieveProcessor configuration
+var queryModelCode = builder.GenerateQueryModelCode();     // C# class code
+var processorCode = builder.GenerateSieveProcessorCode();  // mapper.Property<Author>(...) code
 ```
 
 **Round-trip parsing** - parse and modify queries:
