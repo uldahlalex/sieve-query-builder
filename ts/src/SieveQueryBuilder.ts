@@ -39,6 +39,56 @@ export class SieveQueryBuilder<T extends object> {
   }
 
   /**
+   * Parse a SieveModel object into a SieveQueryBuilder instance
+   * @param model The SieveModel object with filters, sorts, page, and pageSize
+   */
+  static parseFromString<T extends object>(model: SieveModel): SieveQueryBuilder<T> {
+    const builder = new SieveQueryBuilder<T>();
+
+    if (model.filters) {
+      builder.filters = this.parseFilters(model.filters);
+    }
+
+    if (model.sorts) {
+      builder.sorts = this.parseSorts(model.sorts);
+    }
+
+    if (model.page !== undefined && model.page !== null) {
+      builder.pageValue = model.page;
+    }
+
+    if (model.pageSize !== undefined && model.pageSize !== null) {
+      builder.pageSizeValue = model.pageSize;
+    }
+
+    return builder;
+  }
+
+  /**
+   * Parse filters string into individual filter components
+   */
+  private static parseFilters(filtersString: string): string[] {
+    if (!filtersString || filtersString.trim() === '') {
+      return [];
+    }
+
+    // Split by comma and trim
+    return filtersString.split(',').map(f => f.trim()).filter(f => f.length > 0);
+  }
+
+  /**
+   * Parse sorts string into individual sort components
+   */
+  private static parseSorts(sortsString: string): string[] {
+    if (!sortsString || sortsString.trim() === '') {
+      return [];
+    }
+
+    // Split by comma and trim
+    return sortsString.split(',').map(s => s.trim()).filter(s => s.length > 0);
+  }
+
+  /**
    * Add a filter using equals operator (==)
    */
   filterEquals<K extends PropertyKeys<T>>(

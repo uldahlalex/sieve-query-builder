@@ -319,4 +319,160 @@ describe('SieveQueryBuilder', () => {
       expect(params.sorts).toBe('title');
     });
   });
+
+  describe('parseFromString', () => {
+    it('should parse filters correctly', () => {
+      const model = {
+        filters: 'name@=Bob,id==123',
+        sorts: '',
+        page: 1,
+        pageSize: 10
+      };
+
+      const builder = SieveQueryBuilder.parseFromString<Author>(model);
+      const result = builder.buildSieveModel();
+
+      expect(result.filters).toBe('name@=Bob,id==123');
+      expect(result.page).toBe(1);
+      expect(result.pageSize).toBe(10);
+    });
+
+    it('should parse sorts correctly', () => {
+      const model = {
+        filters: '',
+        sorts: '-createdat,name',
+        page: 1,
+        pageSize: 20
+      };
+
+      const builder = SieveQueryBuilder.parseFromString<Author>(model);
+      const result = builder.buildSieveModel();
+
+      expect(result.sorts).toBe('-createdat,name');
+      expect(result.page).toBe(1);
+      expect(result.pageSize).toBe(20);
+    });
+
+    it('should parse pagination correctly', () => {
+      const model = {
+        page: 5,
+        pageSize: 25
+      };
+
+      const builder = SieveQueryBuilder.parseFromString<Author>(model);
+      const result = builder.buildSieveModel();
+
+      expect(result.page).toBe(5);
+      expect(result.pageSize).toBe(25);
+      expect(result.filters).toBeUndefined();
+      expect(result.sorts).toBeUndefined();
+    });
+
+    it('should handle empty model', () => {
+      const model = {};
+
+      const builder = SieveQueryBuilder.parseFromString<Author>(model);
+      const result = builder.buildSieveModel();
+
+      expect(result.filters).toBeUndefined();
+      expect(result.sorts).toBeUndefined();
+      expect(result.page).toBeUndefined();
+      expect(result.pageSize).toBeUndefined();
+    });
+
+    it('should allow chaining after parsing', () => {
+      const model = {
+        filters: 'name@=Bob',
+        sorts: 'name',
+        page: 1,
+        pageSize: 10
+      };
+
+      const builder = SieveQueryBuilder.parseFromString<Author>(model)
+        .filterGreaterThanOrEqual('createdat', new Date('2024-01-01'))
+        .sortByDescending('createdat')
+        .page(2);
+
+      const result = builder.buildSieveModel();
+
+      expect(result.filters).toContain('name@=Bob');
+      expect(result.filters).toContain('createdat>=');
+      expect(result.sorts).toContain('name');
+      expect(result.sorts).toContain('-createdat');
+      expect(result.page).toBe(2);
+      expect(result.pageSize).toBe(10);
+    });
+
+    it('should handle URL search params use case', () => {
+      // Simulating: const [searchParams] = useSearchParams()
+      const filters = 'name@=Bob,id!=123';
+      const sorts = '-createdat,name';
+      const pageSize = 3;
+      const page = 1;
+
+      const builder = SieveQueryBuilder.parseFromString<Author>({
+        pageSize: pageSize,
+        page: page,
+        sorts: sorts,
+        filters: filters
+      });
+
+      const result = builder.buildSieveModel();
+
+      expect(result.filters).toBe('name@=Bob,id!=123');
+      expect(result.sorts).toBe('-createdat,name');
+      expect(result.page).toBe(1);
+      expect(result.pageSize).toBe(3);
+    });
+
+    it('should handle empty strings', () => {
+      const model = {
+        filters: '',
+        sorts: '',
+        page: 1,
+        pageSize: 10
+      };
+
+      const builder = SieveQueryBuilder.parseFromString<Author>(model);
+      const result = builder.buildSieveModel();
+
+      expect(result.filters).toBeUndefined();
+      expect(result.sorts).toBeUndefined();
+      expect(result.page).toBe(1);
+      expect(result.pageSize).toBe(10);
+    });
+
+    it('should handle undefined values in model', () => {
+      const model = {
+        filters: 'name@=Bob',
+        sorts: undefined,
+        page: undefined,
+        pageSize: 10
+      };
+
+      const builder = SieveQueryBuilder.parseFromString<Author>(model);
+      const result = builder.buildSieveModel();
+
+      expect(result.filters).toBe('name@=Bob');
+      expect(result.sorts).toBeUndefined();
+      expect(result.page).toBeUndefined();
+      expect(result.pageSize).toBe(10);
+    });
+
+    it('should support round-trip parsing', () => {
+      const original = SieveQueryBuilder.create<Author>()
+        .filterContains('name', 'Bob')
+        .filterNotEquals('id', '123')
+        .sortByDescending('createdat')
+        .sortBy('name')
+        .page(2)
+        .pageSize(15);
+
+      const model = original.buildSieveModel();
+      const parsed = SieveQueryBuilder.parseFromString<Author>(model);
+      const rebuilt = parsed.buildSieveModel();
+
+      expect(rebuilt).toEqual(model);
+    });
+  });
 });

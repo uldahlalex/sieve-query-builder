@@ -161,6 +161,60 @@ const sieveModel = SieveQueryBuilder.create<Author>()
 // }
 ```
 
+### Parsing from URL Search Params
+
+You can construct a query builder from existing query parameters (e.g., from URL search params):
+
+```typescript
+import { useSearchParams } from 'react-router-dom';
+
+// In your React component
+const [searchParams] = useSearchParams();
+const filters = searchParams.get('filters') ?? "";
+const sorts = searchParams.get('sorts') ?? "";
+const pageSize = Number.parseInt(searchParams.get('pageSize') ?? "10");
+const page = Number.parseInt(searchParams.get('page') ?? "1");
+
+const queryBuilder = SieveQueryBuilder.parseFromString<Author>({
+  pageSize: pageSize,
+  page: page,
+  sorts: sorts,
+  filters: filters
+});
+
+// Continue building on top of the parsed query
+queryBuilder
+  .filterEquals('status', 'active')
+  .sortByDescending('createdat');
+
+// Or just use it as-is
+const model = queryBuilder.buildSieveModel();
+```
+
+### Round-trip Parsing
+
+You can parse a SieveModel back into a builder for modification:
+
+```typescript
+// Build a query
+const original = SieveQueryBuilder.create<Author>()
+  .filterContains('name', 'Bob')
+  .sortBy('name')
+  .page(1)
+  .pageSize(10);
+
+// Convert to model
+const model = original.buildSieveModel();
+
+// Parse back to builder and modify
+const modified = SieveQueryBuilder.parseFromString<Author>(model)
+  .filterGreaterThanOrEqual('createdat', new Date('2024-01-01'))
+  .page(2);
+
+const newModel = modified.buildSieveModel();
+// Result includes both original and new filters/sorts
+```
+
 ### Output Formats
 
 #### 1. SieveModel Object
