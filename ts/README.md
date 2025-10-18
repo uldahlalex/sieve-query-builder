@@ -81,6 +81,50 @@ builder.filterLessThanOrEqual('pages', 500);
 // Result: "pages<=500"
 ```
 
+### Replacing Filters (Preventing Duplicates)
+
+By default, filter methods append to existing filters. Use the `replace` parameter to replace existing filters for the same property:
+
+```typescript
+const builder = SieveQueryBuilder.create<Book>();
+
+// Without replace - appends filters (can create duplicates)
+builder
+  .filterContains('title', 'a')
+  .filterContains('title', 'as')
+  .filterContains('title', 'ass');
+// Result: "title@=a,title@=as,title@=ass"
+
+// With replace=true - replaces existing filters for that property
+builder
+  .filterContains('title', 'a', true)
+  .filterContains('title', 'as', true)
+  .filterContains('title', 'ass', true);
+// Result: "title@=ass"
+
+// Real-world example: Search input that updates on every keystroke
+const handleSearchInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Replace the title filter each time - prevents duplicates
+  queryBuilder.filterContains('title', e.target.value, true);
+  // Other filters are preserved
+};
+
+// Manual filter removal
+builder.removeFilters('title'); // Remove all filters for 'title' property
+builder.removeFiltersByName('BooksCount'); // For custom mapped properties
+```
+
+All filter methods support the `replace` parameter:
+- `filterEquals(property, value, replace?)`
+- `filterNotEquals(property, value, replace?)`
+- `filterContains(property, value, replace?)`
+- `filterStartsWith(property, value, replace?)`
+- `filterGreaterThan(property, value, replace?)`
+- `filterLessThan(property, value, replace?)`
+- `filterGreaterThanOrEqual(property, value, replace?)`
+- `filterLessThanOrEqual(property, value, replace?)`
+- `filterByName(propertyName, operator, value, replace?)`
+
 ### Date Filtering
 
 ```typescript
@@ -161,9 +205,30 @@ const sieveModel = SieveQueryBuilder.create<Author>()
 // }
 ```
 
-### Parsing from URL Search Params
+### Parsing from Query Strings
 
-You can construct a query builder from existing query parameters (e.g., from URL search params):
+You can parse an existing query string back into a builder:
+
+```typescript
+// Parse from a complete query string
+const queryString = 'filters=name@=Bob&sorts=-createdat&page=2&pageSize=20';
+const builder = SieveQueryBuilder.parseQueryString<Author>(queryString);
+
+// Works with leading '?' too
+const urlSearch = '?filters=name@=Bob&page=1';
+const builder2 = SieveQueryBuilder.parseQueryString<Author>(urlSearch);
+
+// Continue building on top of the parsed query
+builder
+  .filterEquals('status', 'active')
+  .sortBy('name');
+
+const model = builder.buildSieveModel();
+```
+
+### Parsing from SieveModel
+
+You can construct a query builder from a SieveModel object (useful with URL search params):
 
 ```typescript
 import { useSearchParams } from 'react-router-dom';
@@ -175,7 +240,7 @@ const sorts = searchParams.get('sorts') ?? "";
 const pageSize = Number.parseInt(searchParams.get('pageSize') ?? "10");
 const page = Number.parseInt(searchParams.get('page') ?? "1");
 
-const queryBuilder = SieveQueryBuilder.parseFromString<Author>({
+const queryBuilder = SieveQueryBuilder.fromSieveModel<Author>({
   pageSize: pageSize,
   page: page,
   sorts: sorts,
@@ -193,7 +258,7 @@ const model = queryBuilder.buildSieveModel();
 
 ### Round-trip Parsing
 
-You can parse a SieveModel back into a builder for modification:
+Both parsing methods support round-trip conversion:
 
 ```typescript
 // Build a query
@@ -203,15 +268,22 @@ const original = SieveQueryBuilder.create<Author>()
   .page(1)
   .pageSize(10);
 
-// Convert to model
-const model = original.buildSieveModel();
+// Round-trip via query string
+const queryString = original.buildQueryString();
+const fromQuery = SieveQueryBuilder.parseQueryString<Author>(queryString);
+const rebuilt1 = fromQuery.buildQueryString();
+// rebuilt1 === queryString
 
-// Parse back to builder and modify
-const modified = SieveQueryBuilder.parseFromString<Author>(model)
+// Round-trip via SieveModel
+const model = original.buildSieveModel();
+const fromModel = SieveQueryBuilder.fromSieveModel<Author>(model);
+const rebuilt2 = fromModel.buildSieveModel();
+// rebuilt2 equals model
+
+// Add more filters/sorts after parsing
+const modified = SieveQueryBuilder.parseQueryString<Author>(queryString)
   .filterGreaterThanOrEqual('createdat', new Date('2024-01-01'))
   .page(2);
-
-const newModel = modified.buildSieveModel();
 // Result includes both original and new filters/sorts
 ```
 

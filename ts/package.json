@@ -1,6 +1,6 @@
 {
   "name": "ts-sieve-query-builder",
-  "version": "0.1.1",
+  "version": "0.2.2",
   "description": "Type-safe Sieve query string builder for TypeScript",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

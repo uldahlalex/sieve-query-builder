@@ -42,7 +42,7 @@ export class SieveQueryBuilder<T extends object> {
    * Parse a SieveModel object into a SieveQueryBuilder instance
    * @param model The SieveModel object with filters, sorts, page, and pageSize
    */
-  static parseFromString<T extends object>(model: SieveModel): SieveQueryBuilder<T> {
+  static fromSieveModel<T extends object>(model: SieveModel): SieveQueryBuilder<T> {
     const builder = new SieveQueryBuilder<T>();
 
     if (model.filters) {
@@ -59,6 +59,54 @@ export class SieveQueryBuilder<T extends object> {
 
     if (model.pageSize !== undefined && model.pageSize !== null) {
       builder.pageSizeValue = model.pageSize;
+    }
+
+    return builder;
+  }
+
+  /**
+   * Parse a query string into a SieveQueryBuilder instance
+   * @param queryString The query string to parse (e.g., "filters=name@=Bob&sorts=-createdat&page=1&pageSize=10")
+   */
+  static parseQueryString<T extends object>(queryString: string): SieveQueryBuilder<T> {
+    const builder = new SieveQueryBuilder<T>();
+
+    if (!queryString || queryString.trim() === '') {
+      return builder;
+    }
+
+    // Remove leading '?' if present
+    queryString = queryString.trim().replace(/^\?/, '');
+
+    const parameters = queryString.split('&');
+
+    for (const param of parameters) {
+      const equalIndex = param.indexOf('=');
+      if (equalIndex === -1) continue;
+
+      const key = param.substring(0, equalIndex).toLowerCase();
+      const value = decodeURIComponent(param.substring(equalIndex + 1));
+
+      switch (key) {
+        case 'filters':
+          builder.filters = this.parseFilters(value);
+          break;
+        case 'sorts':
+          builder.sorts = this.parseSorts(value);
+          break;
+        case 'page':
+          const page = parseInt(value, 10);
+          if (!isNaN(page)) {
+            builder.pageValue = page;
+          }
+          break;
+        case 'pagesize':
+          const pageSize = parseInt(value, 10);
+          if (!isNaN(pageSize)) {
+            builder.pageSizeValue = pageSize;
+          }
+          break;
+      }
     }
 
     return builder;
@@ -89,56 +137,123 @@ export class SieveQueryBuilder<T extends object> {
   }
 
   /**
+   * Remove all filters for a specific property
+   */
+  removeFilters<K extends PropertyKeys<T>>(property: K): this {
+    const propertyName = String(property);
+    this.filters = this.filters.filter(f => !this.isFilterForProperty(f, propertyName));
+    return this;
+  }
+
+  /**
+   * Remove all filters for a specific property name (for mapped properties)
+   */
+  removeFiltersByName(propertyName: string): this {
+    this.filters = this.filters.filter(f => !this.isFilterForProperty(f, propertyName));
+    return this;
+  }
+
+  /**
+   * Check if a filter string is for the given property name
+   */
+  private isFilterForProperty(filter: string, propertyName: string): boolean {
+    const operators = ['==', '!=', '>=', '<=', '@=', '_=', '>', '<'];
+    for (const op of operators) {
+      const index = filter.indexOf(op);
+      if (index > 0) {
+        const filterProp = filter.substring(0, index);
+        return filterProp === propertyName;
+      }
+    }
+    return false;
+  }
+
+  /**
    * Add a filter using equals operator (==)
+   * @param property The property to filter on
+   * @param value The value to filter by
+   * @param replace If true, removes existing filters for this property first (default: false)
    */
   filterEquals<K extends PropertyKeys<T>>(
     property: K,
-    value: T[K] | string | number | boolean
+    value: T[K] | string | number | boolean,
+    replace: boolean = false
   ): this {
+    if (replace) {
+      this.removeFilters(property);
+    }
     this.filters.push(`${String(property)}==${value}`);
     return this;
   }
 
   /**
    * Add a filter using not equals operator (!=)
+   * @param property The property to filter on
+   * @param value The value to filter by
+   * @param replace If true, removes existing filters for this property first (default: false)
    */
   filterNotEquals<K extends PropertyKeys<T>>(
     property: K,
-    value: T[K] | string | number | boolean
+    value: T[K] | string | number | boolean,
+    replace: boolean = false
   ): this {
+    if (replace) {
+      this.removeFilters(property);
+    }
     this.filters.push(`${String(property)}!=${value}`);
     return this;
   }
 
   /**
    * Add a filter using contains operator (@=)
+   * @param property The property to filter on
+   * @param value The value to filter by
+   * @param replace If true, removes existing filters for this property first (default: false)
    */
   filterContains<K extends PropertyKeys<T>>(
     property: K,
-    value: string
+    value: string,
+    replace: boolean = false
   ): this {
+    if (replace) {
+      this.removeFilters(property);
+    }
     this.filters.push(`${String(property)}@=${value}`);
     return this;
   }
 
   /**
    * Add a filter using starts with operator (_=)
+   * @param property The property to filter on
+   * @param value The value to filter by
+   * @param replace If true, removes existing filters for this property first (default: false)
    */
   filterStartsWith<K extends PropertyKeys<T>>(
     property: K,
-    value: string
+    value: string,
+    replace: boolean = false
   ): this {
+    if (replace) {
+      this.removeFilters(property);
+    }
     this.filters.push(`${String(property)}_=${value}`);
     return this;
   }
 
   /**
    * Add a filter using greater than operator (>)
+   * @param property The property to filter on
+   * @param value The value to filter by
+   * @param replace If true, removes existing filters for this property first (default: false)
    */
   filterGreaterThan<K extends PropertyKeys<T>>(
     property: K,
-    value: T[K] | string | number | Date
+    value: T[K] | string | number | Date,
+    replace: boolean = false
   ): this {
+    if (replace) {
+      this.removeFilters(property);
+    }
     const formattedValue = value instanceof Date ? value.toISOString() : value;
     this.filters.push(`${String(property)}>${formattedValue}`);
     return this;
@@ -146,11 +261,18 @@ export class SieveQueryBuilder<T extends object> {
 
   /**
    * Add a filter using less than operator (<)
+   * @param property The property to filter on
+   * @param value The value to filter by
+   * @param replace If true, removes existing filters for this property first (default: false)
    */
   filterLessThan<K extends PropertyKeys<T>>(
     property: K,
-    value: T[K] | string | number | Date
+    value: T[K] | string | number | Date,
+    replace: boolean = false
   ): this {
+    if (replace) {
+      this.removeFilters(property);
+    }
     const formattedValue = value instanceof Date ? value.toISOString() : value;
     this.filters.push(`${String(property)}<${formattedValue}`);
     return this;
@@ -158,11 +280,18 @@ export class SieveQueryBuilder<T extends object> {
 
   /**
    * Add a filter using greater than or equal operator (>=)
+   * @param property The property to filter on
+   * @param value The value to filter by
+   * @param replace If true, removes existing filters for this property first (default: false)
    */
   filterGreaterThanOrEqual<K extends PropertyKeys<T>>(
     property: K,
-    value: T[K] | string | number | Date
+    value: T[K] | string | number | Date,
+    replace: boolean = false
   ): this {
+    if (replace) {
+      this.removeFilters(property);
+    }
     const formattedValue = value instanceof Date ? value.toISOString() : value;
     this.filters.push(`${String(property)}>=${formattedValue}`);
     return this;
@@ -170,11 +299,18 @@ export class SieveQueryBuilder<T extends object> {
 
   /**
    * Add a filter using less than or equal operator (<=)
+   * @param property The property to filter on
+   * @param value The value to filter by
+   * @param replace If true, removes existing filters for this property first (default: false)
    */
   filterLessThanOrEqual<K extends PropertyKeys<T>>(
     property: K,
-    value: T[K] | string | number | Date
+    value: T[K] | string | number | Date,
+    replace: boolean = false
   ): this {
+    if (replace) {
+      this.removeFilters(property);
+    }
     const formattedValue = value instanceof Date ? value.toISOString() : value;
     this.filters.push(`${String(property)}<=${formattedValue}`);
     return this;
@@ -185,8 +321,17 @@ export class SieveQueryBuilder<T extends object> {
    * @param propertyName The custom property name (e.g., "BooksCount")
    * @param operator The operator symbol (e.g., ">=", "==", "@=")
    * @param value The value to filter by
+   * @param replace If true, removes existing filters for this property first (default: false)
    */
-  filterByName(propertyName: string, operator: string, value: string | number | boolean | Date): this {
+  filterByName(
+    propertyName: string,
+    operator: string,
+    value: string | number | boolean | Date,
+    replace: boolean = false
+  ): this {
+    if (replace) {
+      this.removeFiltersByName(propertyName);
+    }
     const formattedValue = value instanceof Date ? value.toISOString() : value;
     this.filters.push(`${propertyName}${operator}${formattedValue}`);
     return this;
