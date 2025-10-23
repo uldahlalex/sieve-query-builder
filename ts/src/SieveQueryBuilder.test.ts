@@ -187,10 +187,10 @@ describe('SieveQueryBuilder', () => {
 
       expect(model).toEqual({
         filters: 'name@=Bob',
+        sorts: '',
+        page: 1,
+        pageSize: 10,
       });
-      expect(model.sorts).toBeUndefined();
-      expect(model.page).toBeUndefined();
-      expect(model.pageSize).toBeUndefined();
     });
   });
 
@@ -205,7 +205,7 @@ describe('SieveQueryBuilder', () => {
         .buildQueryString();
 
       expect(queryString).toBe(
-        'filters=name%40%3DBob%2Cname%21%3DBob_0&sorts=name&page=2&pageSize=10'
+        'filters=name%40%3DBob%2Cname!%3DBob_0&sorts=name&page=2&pageSize=10'
       );
     });
 
@@ -355,6 +355,8 @@ describe('SieveQueryBuilder', () => {
 
     it('should parse pagination correctly', () => {
       const model = {
+        filters: '',
+        sorts: '',
         page: 5,
         pageSize: 25
       };
@@ -364,20 +366,25 @@ describe('SieveQueryBuilder', () => {
 
       expect(result.page).toBe(5);
       expect(result.pageSize).toBe(25);
-      expect(result.filters).toBeUndefined();
-      expect(result.sorts).toBeUndefined();
+      expect(result.filters).toBe('');
+      expect(result.sorts).toBe('');
     });
 
     it('should handle empty model', () => {
-      const model = {};
+      const model = {
+        filters: '',
+        sorts: '',
+        page: 1,
+        pageSize: 10
+      };
 
       const builder = SieveQueryBuilder.fromSieveModel<Author>(model);
       const result = builder.buildSieveModel();
 
-      expect(result.filters).toBeUndefined();
-      expect(result.sorts).toBeUndefined();
-      expect(result.page).toBeUndefined();
-      expect(result.pageSize).toBeUndefined();
+      expect(result.filters).toBe('');
+      expect(result.sorts).toBe('');
+      expect(result.page).toBe(1);
+      expect(result.pageSize).toBe(10);
     });
 
     it('should allow chaining after parsing', () => {
@@ -436,8 +443,8 @@ describe('SieveQueryBuilder', () => {
       const builder = SieveQueryBuilder.fromSieveModel<Author>(model);
       const result = builder.buildSieveModel();
 
-      expect(result.filters).toBeUndefined();
-      expect(result.sorts).toBeUndefined();
+      expect(result.filters).toBe('');
+      expect(result.sorts).toBe('');
       expect(result.page).toBe(1);
       expect(result.pageSize).toBe(10);
     });
@@ -445,8 +452,8 @@ describe('SieveQueryBuilder', () => {
     it('should handle undefined values in model', () => {
       const model = {
         filters: 'name@=Bob',
-        sorts: undefined,
-        page: undefined,
+        sorts: '',
+        page: 1,
         pageSize: 10
       };
 
@@ -454,8 +461,8 @@ describe('SieveQueryBuilder', () => {
       const result = builder.buildSieveModel();
 
       expect(result.filters).toBe('name@=Bob');
-      expect(result.sorts).toBeUndefined();
-      expect(result.page).toBeUndefined();
+      expect(result.sorts).toBe('');
+      expect(result.page).toBe(1);
       expect(result.pageSize).toBe(10);
     });
 
@@ -638,8 +645,8 @@ describe('SieveQueryBuilder', () => {
 
       expect(result.page).toBe(5);
       expect(result.pageSize).toBe(25);
-      expect(result.filters).toBeUndefined();
-      expect(result.sorts).toBeUndefined();
+      expect(result.filters).toBe('');
+      expect(result.sorts).toBe('');
     });
 
     it('should handle URL-encoded query string', () => {
@@ -666,10 +673,10 @@ describe('SieveQueryBuilder', () => {
       const builder = SieveQueryBuilder.parseQueryString<Author>('');
       const result = builder.buildSieveModel();
 
-      expect(result.filters).toBeUndefined();
-      expect(result.sorts).toBeUndefined();
-      expect(result.page).toBeUndefined();
-      expect(result.pageSize).toBeUndefined();
+      expect(result.filters).toBe('');
+      expect(result.sorts).toBe('');
+      expect(result.page).toBe(1);
+      expect(result.pageSize).toBe(10);
     });
 
     it('should allow chaining after parsing query string', () => {

@@ -8,10 +8,10 @@
  * Represents the Sieve model structure
  */
 export interface SieveModel {
-  filters?: string;
-  sorts?: string;
-  page?: number;
-  pageSize?: number;
+  filters: string;
+  sorts: string;
+  page: number;
+  pageSize: number;
 }
 
 /**
@@ -397,25 +397,12 @@ export class SieveQueryBuilder<T extends object> {
    * Build a complete SieveModel object
    */
   buildSieveModel(): SieveModel {
-    const model: SieveModel = {};
-
-    if (this.filters.length > 0) {
-      model.filters = this.buildFiltersString();
-    }
-
-    if (this.sorts.length > 0) {
-      model.sorts = this.buildSortsString();
-    }
-
-    if (this.pageValue !== undefined) {
-      model.page = this.pageValue;
-    }
-
-    if (this.pageSizeValue !== undefined) {
-      model.pageSize = this.pageSizeValue;
-    }
-
-    return model;
+    return {
+      filters: this.buildFiltersString(),
+      sorts: this.buildSortsString(),
+      page: this.pageValue ?? 1,
+      pageSize: this.pageSizeValue ?? 10
+    };
   }
 
   /**
