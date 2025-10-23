@@ -1,0 +1,3 @@
+[submodule "examples/fullstack-app-with-tests"]
+	path = examples/fullstack-app-with-tests
+	url = https://github.com/uldahlalex/projectsolution
