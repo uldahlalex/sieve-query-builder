@@ -23,7 +23,8 @@ public class SieveQueryBuilder<T> where T : class
     public SieveQueryBuilder<T> FilterEquals<TProp>(Expression<Func<T, TProp>> property, TProp value)
     {
         var propertyName = GetPropertyName(property);
-        _filters.Add($"{propertyName}=={value}");
+        var formattedValue = FormatValue(value);
+        _filters.Add($"{propertyName}=={formattedValue}");
         return this;
     }
 
@@ -33,7 +34,8 @@ public class SieveQueryBuilder<T> where T : class
     public SieveQueryBuilder<T> FilterNotEquals<TProp>(Expression<Func<T, TProp>> property, TProp value)
     {
         var propertyName = GetPropertyName(property);
-        _filters.Add($"{propertyName}!={value}");
+        var formattedValue = FormatValue(value);
+        _filters.Add($"{propertyName}!={formattedValue}");
         return this;
     }
 
@@ -43,7 +45,8 @@ public class SieveQueryBuilder<T> where T : class
     public SieveQueryBuilder<T> FilterContains<TProp>(Expression<Func<T, TProp>> property, TProp value)
     {
         var propertyName = GetPropertyName(property);
-        _filters.Add($"{propertyName}@={value}");
+        var formattedValue = FormatValue(value);
+        _filters.Add($"{propertyName}@={formattedValue}");
         return this;
     }
 
@@ -53,7 +56,8 @@ public class SieveQueryBuilder<T> where T : class
     public SieveQueryBuilder<T> FilterStartsWith<TProp>(Expression<Func<T, TProp>> property, TProp value)
     {
         var propertyName = GetPropertyName(property);
-        _filters.Add($"{propertyName}_={value}");
+        var formattedValue = FormatValue(value);
+        _filters.Add($"{propertyName}_={formattedValue}");
         return this;
     }
 
@@ -63,7 +67,8 @@ public class SieveQueryBuilder<T> where T : class
     public SieveQueryBuilder<T> FilterGreaterThan<TProp>(Expression<Func<T, TProp>> property, TProp value)
     {
         var propertyName = GetPropertyName(property);
-        _filters.Add($"{propertyName}>{value}");
+        var formattedValue = FormatValue(value);
+        _filters.Add($"{propertyName}>{formattedValue}");
         return this;
     }
 
@@ -73,7 +78,8 @@ public class SieveQueryBuilder<T> where T : class
     public SieveQueryBuilder<T> FilterLessThan<TProp>(Expression<Func<T, TProp>> property, TProp value)
     {
         var propertyName = GetPropertyName(property);
-        _filters.Add($"{propertyName}<{value}");
+        var formattedValue = FormatValue(value);
+        _filters.Add($"{propertyName}<{formattedValue}");
         return this;
     }
 
@@ -83,7 +89,8 @@ public class SieveQueryBuilder<T> where T : class
     public SieveQueryBuilder<T> FilterGreaterThanOrEqual<TProp>(Expression<Func<T, TProp>> property, TProp value)
     {
         var propertyName = GetPropertyName(property);
-        _filters.Add($"{propertyName}>={value}");
+        var formattedValue = FormatValue(value);
+        _filters.Add($"{propertyName}>={formattedValue}");
         return this;
     }
 
@@ -93,7 +100,8 @@ public class SieveQueryBuilder<T> where T : class
     public SieveQueryBuilder<T> FilterLessThanOrEqual<TProp>(Expression<Func<T, TProp>> property, TProp value)
     {
         var propertyName = GetPropertyName(property);
-        _filters.Add($"{propertyName}<={value}");
+        var formattedValue = FormatValue(value);
+        _filters.Add($"{propertyName}<={formattedValue}");
         return this;
     }
 
@@ -102,7 +110,8 @@ public class SieveQueryBuilder<T> where T : class
     /// </summary>
     public SieveQueryBuilder<T> FilterByName(string propertyName, string operatorSymbol, object value)
     {
-        _filters.Add($"{propertyName}{operatorSymbol}{value}");
+        var formattedValue = FormatValue(value);
+        _filters.Add($"{propertyName}{operatorSymbol}{formattedValue}");
         return this;
     }
 
@@ -211,6 +220,25 @@ public class SieveQueryBuilder<T> where T : class
         }
 
         return parts.Any() ? string.Join("&", parts) : string.Empty;
+    }
+
+    /// <summary>
+    /// Format a value for use in a filter, handling DateTime with ISO 8601 format
+    /// </summary>
+    private static string FormatValue<TProp>(TProp value)
+    {
+        if (value is DateTime dateTime)
+        {
+            // Use ISO 8601 format with UTC indicator to preserve timezone information
+            // Format: "yyyy-MM-ddTHH:mm:ss.fffZ" for UTC times
+            // This ensures compatibility with modern database drivers (PostgreSQL, SQL Server, etc.)
+            // that enforce strict timezone handling
+            return dateTime.Kind == DateTimeKind.Utc
+                ? dateTime.ToString("yyyy-MM-ddTHH:mm:ss.fffZ", System.Globalization.CultureInfo.InvariantCulture)
+                : dateTime.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss.fffZ", System.Globalization.CultureInfo.InvariantCulture);
+        }
+
+        return value?.ToString() ?? string.Empty;
     }
 
     /// <summary>

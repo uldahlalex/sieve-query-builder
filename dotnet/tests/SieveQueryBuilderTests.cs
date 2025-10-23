@@ -207,6 +207,145 @@ public class SieveQueryBuilderTests
     }
 
     [Fact]
+    public void BuildDateTimeFilter_UtcKind_ProducesISO8601Format()
+    {
+        // Arrange
+        var utcDate = new DateTime(2024, 6, 10, 16, 48, 5, 123, DateTimeKind.Utc);
+
+        // Act
+        var query = SieveQueryBuilder<Author>.Create()
+            .FilterGreaterThan(a => a.Createdat, utcDate)
+            .BuildFiltersString();
+
+        // Assert
+        Assert.Equal("Createdat>2024-06-10T16:48:05.123Z", query);
+        _outputHelper.WriteLine($"UTC DateTime Filter: {query}");
+    }
+
+    [Fact]
+    public void BuildDateTimeFilter_UnspecifiedKind_ConvertsToUtcISO8601()
+    {
+        // Arrange
+        var unspecifiedDate = new DateTime(2024, 6, 10, 16, 48, 5, 123, DateTimeKind.Unspecified);
+
+        // Act
+        var query = SieveQueryBuilder<Author>.Create()
+            .FilterGreaterThan(a => a.Createdat, unspecifiedDate)
+            .BuildFiltersString();
+
+        // Assert - Should convert to UTC and format as ISO 8601
+        Assert.Contains("Createdat>", query);
+        Assert.Contains("Z", query); // Should have UTC indicator
+        Assert.Matches(@"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z", query.Substring(query.IndexOf('>') + 1));
+        _outputHelper.WriteLine($"Unspecified DateTime Filter: {query}");
+    }
+
+    [Fact]
+    public void BuildDateTimeFilter_LocalKind_ConvertsToUtcISO8601()
+    {
+        // Arrange
+        var localDate = new DateTime(2024, 6, 10, 16, 48, 5, 123, DateTimeKind.Local);
+
+        // Act
+        var query = SieveQueryBuilder<Author>.Create()
+            .FilterGreaterThan(a => a.Createdat, localDate)
+            .BuildFiltersString();
+
+        // Assert - Should convert to UTC and format as ISO 8601
+        Assert.Contains("Createdat>", query);
+        Assert.Contains("Z", query); // Should have UTC indicator
+        Assert.Matches(@"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z", query.Substring(query.IndexOf('>') + 1));
+        _outputHelper.WriteLine($"Local DateTime Filter: {query}");
+    }
+
+    [Fact]
+    public void BuildDateTimeFilter_RealWorldScenario_PostgresqlCompatible()
+    {
+        // Arrange - Simulate the exact scenario from the issue description
+        var cutoffDate = DateTime.UtcNow.AddDays(-500);
+
+        // Act
+        var query = SieveQueryBuilder<Author>.Create()
+            .FilterGreaterThan(a => a.Createdat, cutoffDate)
+            .BuildSieveModel();
+
+        // Assert
+        Assert.Contains("Createdat>", query.Filters);
+        Assert.Contains("Z", query.Filters); // UTC indicator present
+        // Verify it's in ISO 8601 format (culture-independent)
+        Assert.Matches(@"Createdat>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z", query.Filters);
+
+        _outputHelper.WriteLine($"PostgreSQL-compatible DateTime Filter: {query.Filters}");
+        _outputHelper.WriteLine($"Format is culture-independent ISO 8601 with UTC indicator");
+    }
+
+    [Fact]
+    public void BuildDateTimeFilter_AllComparisonOperators_UseISO8601()
+    {
+        // Arrange
+        var testDate = new DateTime(2024, 1, 15, 10, 30, 45, 678, DateTimeKind.Utc);
+        var expectedFormat = "2024-01-15T10:30:45.678Z";
+
+        // Act
+        var queryEquals = SieveQueryBuilder<Author>.Create()
+            .FilterEquals(a => a.Createdat, testDate)
+            .BuildFiltersString();
+
+        var queryNotEquals = SieveQueryBuilder<Author>.Create()
+            .FilterNotEquals(a => a.Createdat, testDate)
+            .BuildFiltersString();
+
+        var queryGreaterThan = SieveQueryBuilder<Author>.Create()
+            .FilterGreaterThan(a => a.Createdat, testDate)
+            .BuildFiltersString();
+
+        var queryLessThan = SieveQueryBuilder<Author>.Create()
+            .FilterLessThan(a => a.Createdat, testDate)
+            .BuildFiltersString();
+
+        var queryGreaterOrEqual = SieveQueryBuilder<Author>.Create()
+            .FilterGreaterThanOrEqual(a => a.Createdat, testDate)
+            .BuildFiltersString();
+
+        var queryLessOrEqual = SieveQueryBuilder<Author>.Create()
+            .FilterLessThanOrEqual(a => a.Createdat, testDate)
+            .BuildFiltersString();
+
+        // Assert
+        Assert.Equal($"Createdat=={expectedFormat}", queryEquals);
+        Assert.Equal($"Createdat!={expectedFormat}", queryNotEquals);
+        Assert.Equal($"Createdat>{expectedFormat}", queryGreaterThan);
+        Assert.Equal($"Createdat<{expectedFormat}", queryLessThan);
+        Assert.Equal($"Createdat>={expectedFormat}", queryGreaterOrEqual);
+        Assert.Equal($"Createdat<={expectedFormat}", queryLessOrEqual);
+
+        _outputHelper.WriteLine("All comparison operators use ISO 8601 format:");
+        _outputHelper.WriteLine($"  Equals: {queryEquals}");
+        _outputHelper.WriteLine($"  NotEquals: {queryNotEquals}");
+        _outputHelper.WriteLine($"  GreaterThan: {queryGreaterThan}");
+        _outputHelper.WriteLine($"  LessThan: {queryLessThan}");
+        _outputHelper.WriteLine($"  GreaterOrEqual: {queryGreaterOrEqual}");
+        _outputHelper.WriteLine($"  LessOrEqual: {queryLessOrEqual}");
+    }
+
+    [Fact]
+    public void BuildDateTimeFilter_FilterByName_UseISO8601()
+    {
+        // Arrange
+        var testDate = new DateTime(2024, 1, 15, 10, 30, 45, 678, DateTimeKind.Utc);
+        var expectedFormat = "2024-01-15T10:30:45.678Z";
+
+        // Act
+        var query = SieveQueryBuilder<Author>.Create()
+            .FilterByName("CustomDateField", ">=", testDate)
+            .BuildFiltersString();
+
+        // Assert
+        Assert.Equal($"CustomDateField>={expectedFormat}", query);
+        _outputHelper.WriteLine($"FilterByName with DateTime: {query}");
+    }
+
+    [Fact]
     public void BuildComplexQuery_RealWorldExample()
     {
         // Arrange & Act - Simulate a complex search scenario
